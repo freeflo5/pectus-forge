@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PECTUS FORGE — Workout Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #22222e;
+    --accent: #00e5ff;
+    --accent2: #ff3a5c;
+    --accent3: #7fff6b;
+    --text: #e8e8f0;
+    --muted: #5a5a72;
+    --chest: #ff3a5c;
+    --back: #00e5ff;
+    --core: #7fff6b;
+    --legs: #ff9500;
+    --shoulders: #c084fc;
+    --biceps: #ffd700;
+    --triceps: #ff6b6b;
+    --cardio: #00ffcc;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 60px;
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.6rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,229,255,0.4);
+  }
+
+  .nav-logo span { color: var(--accent2); }
+
+  .nav-tabs {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .nav-tab {
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  .nav-tab.active {
+    background: var(--card);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,255,0.2);
+  }
+
+  .nav-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* PAGES */
+  .page { display: none; animation: fadeUp 0.3s ease; }
+  .page.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* HERO */
+  .hero {
+    padding: 3rem 2rem 1rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .hero-title {
+    font-family: 'Bebas Neue', cursive;
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: 0.9;
+    letter-spacing: 0.02em;
+    margin-bottom: 1rem;
+  }
+
+  .hero-title .accent { color: var(--accent); }
+  .hero-title .accent2 { color: var(--accent2); }
+
+  .hero-sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    max-width: 500px;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  /* FOCUS SELECTOR */
+  .focus-bar {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem 1.5rem;
+  }
+
+  .focus-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .focus-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .focus-chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .focus-chip:hover { border-color: var(--accent); color: var(--text); }
+  .focus-chip.active { background: rgba(0,229,255,0.08); border-color: var(--accent); color: var(--accent); }
+
+  /* WORKOUT PREVIEW */
+  .workout-area {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+  }
+
+  .workout-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .workout-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    border: 1px solid;
+  }
+
+  .badge-time { border-color: var(--accent3); color: var(--accent3); }
+  .badge-exercises { border-color: var(--muted); color: var(--muted); }
+
+  .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover { background: #33ecff; transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger {
+    background: rgba(255,58,92,0.1);
+    color: var(--accent2);
+    border: 1px solid rgba(255,58,92,0.3);
+  }
+  .btn-danger:hover { background: rgba(255,58,92,0.2); }
+
+  .btn-success {
+    background: rgba(127,255,107,0.1);
+    color: var(--accent3);
+    border: 1px solid rgba(127,255,107,0.3);
+  }
+  .btn-success:hover { background: rgba(127,255,107,0.2); }
+
+  /* EXERCISE CARDS */
+  .exercise-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .superset-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .superset-header {
+    padding: 8px 16px;
+    background: rgba(0,229,255,0.04);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .superset-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .exercise-card {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    transition: background 0.2s;
+  }
+
+  .exercise-card:last-child { border-bottom: none; }
+  .exercise-card:hover { background: rgba(255,255,255,0.02); }
+
+  .exercise-card.completed {
+    opacity: 0.5;
+  }
+
+  .exercise-card.completed .ex-name {
+    text-decoration: line-through;
+  }
+
+  .ex-left { display: flex; align-items: center; gap: 12px; }
+
+  .muscle-pill {
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border: 1px solid;
+  }
+
+  .muscle-chest { color: var(--chest); border-color: var(--chest); background: rgba(255,58,92,0.08); }
+  .muscle-back { color: var(--back); border-color: var(--back); background: rgba(0,229,255,0.08); }
+  .muscle-core { color: var(--core); border-color: var(--core); background: rgba(127,255,107,0.08); }
+  .muscle-legs { color: var(--legs); border-color: var(--legs); background: rgba(255,149,0,0.08); }
+  .muscle-shoulders { color: var(--shoulders); border-color: var(--shoulders); background: rgba(192,132,252,0.08); }
+  .muscle-biceps { color: var(--biceps); border-color: var(--biceps); background: rgba(255,215,0,0.08); }
+  .muscle-triceps { color: var(--triceps); border-color: var(--triceps); background: rgba(255,107,107,0.08); }
+
+  .ex-info { flex: 1; }
+
+  .ex-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+    line-height: 1.3;
+  }
+
+  .ex-sets-reps {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* LOGGING */
+  .ex-log {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .log-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .log-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .log-input {
+    width: 64px;
+    padding: 5px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+
+  .log-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .rpe-input {
+    width: 52px;
+  }
+
+  .log-complete-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 1rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .log-complete-btn:hover { border-color: var(--accent3); color: var(--accent3); }
+  .log-complete-btn.done { border-color: var(--accent3); background: rgba(127,255,107,0.15); color: var(--accent3); }
+
+  /* REST DIVIDER */
+  .rest-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    background: rgba(255,255,255,0.01);
+  }
+
+  /* RILEY PRINCIPLES */
+  .principles-strip {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .principle-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .principle-num {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2rem;
+    color: rgba(0,229,255,0.15);
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .principle-text {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .principle-text strong { color: var(--text); display: block; margin-bottom: 2px; }
+
+  /* HISTORY PAGE */
+  .page-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .page-header h2 {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2.5rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+  }
+
+  .page-header p { color: var(--muted); font-size: 0.85rem; }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .history-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .history-card:hover { border-color: rgba(0,229,255,0.3); }
+
+  .history-header {
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .history-date {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.3rem;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+
+  .history-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .history-body {
+    display: none;
+    padding: 1rem 1.25rem;
+  }
+
+  .history-body.open { display: block; }
+
+  .history-ex-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .history-ex-row:last-child { border-bottom: none; }
+
+  .history-ex-name { font-weight: 600; }
+
+  .history-ex-data {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+  }
+
+  .empty-state .big {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 4rem;
+    color: var(--border);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  /* STRETCHING PAGE */
+  .stretch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .stretch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: border-color 0.2s;
+  }
+
+  .stretch-card:hover { border-color: rgba(127,255,107,0.3); }
+
+  .stretch-num {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2.5rem;
+    color: rgba(127,255,107,0.2);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .stretch-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--accent3);
+  }
+
+  .stretch-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+  }
+
+  .stretch-hold {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text);
+    letter-spacing: 0.05em;
+    background: var(--bg);
+    padding: 4px 10px;
+    border-radius: 999px;
+    display: inline-block;
+    border: 1px solid var(--border);
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar-wrap {
+    max-width: 1000px;
+    margin: 0 auto 1rem;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* SAVE BTN AREA */
+  .save-area {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem 3rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--card);
+    border: 1px solid var(--accent3);
+    color: var(--accent3);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 999;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* RILEY QUOTE */
+  .riley-quote {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem 2rem;
+  }
+
+  .quote-box {
+    background: linear-gradient(135deg, rgba(0,229,255,0.05), rgba(255,58,92,0.05));
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-style: italic;
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  .quote-box cite {
+    display: block;
+    margin-top: 6px;
+    font-style: normal;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* MUSCLE BALANCE VIZ */
+  .balance-viz {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem 1.5rem;
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .balance-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .balance-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    width: 80px;
+    flex-shrink: 0;
+  }
+
+  .balance-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .balance-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.5s ease;
+  }
+
+  .balance-count {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    width: 24px;
+    text-align: right;
+  }
+
+  /* DELETE btn on history */
+  .del-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+
+  .del-btn:hover { color: var(--accent2); }
+
+  @media (max-width: 600px) {
+    nav { padding: 0 1rem; }
+    .hero, .focus-bar, .workout-area, .page-content, .principles-strip,
+    .riley-quote, .balance-viz, .progress-bar-wrap, .save-area {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    .exercise-card {
+      grid-template-columns: 1fr;
+    }
+    .ex-log { justify-content: flex-start; }
+    .nav-tags { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">PECTUS<span>FORGE</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('generate')">Generate</button>
+    <button class="nav-tab" onclick="showPage('history')">History</button>
+    <button class="nav-tab" onclick="showPage('stretch')">Stretch</button>
+  </div>
+  <div class="nav-tag">// Riley Byrne Method</div>
+</nav>
+
+<!-- GENERATE PAGE -->
+<div class="page active" id="page-generate">
+
+  <div class="hero">
+    <div class="hero-eyebrow">// Pectus Excavatum Protocol</div>
+    <h1 class="hero-title">
+      BUILD THE<br>
+      <span class="accent">CHEST</span> <span class="accent2">OUT</span>
+    </h1>
+    <p class="hero-sub">Smart workout generator balancing chest, back & core to reduce the visual depth of pectus and transform your posture. Inspired by Riley Byrne's proven method.</p>
+  </div>
+
+  <div class="focus-bar">
+    <div class="focus-label">// workout focus</div>
+    <div class="focus-chips">
+      <button class="focus-chip active" data-focus="balanced" onclick="setFocus(this, 'balanced')">⚖️ Balanced</button>
+      <button class="focus-chip" data-focus="chest" onclick="setFocus(this, 'chest')">🔴 Chest Heavy</button>
+      <button class="focus-chip" data-focus="back" onclick="setFocus(this, 'back')">🔵 Back Heavy</button>
+      <button class="focus-chip" data-focus="push" onclick="setFocus(this, 'push')">💪 Push Day</button>
+      <button class="focus-chip" data-focus="pull" onclick="setFocus(this, 'pull')">🏋️ Pull Day</button>
+      <button class="focus-chip" data-focus="full" onclick="setFocus(this, 'full')">⚡ Full Body</button>
+    </div>
+  </div>
+
+  <div class="workout-area">
+    <div class="workout-controls">
+      <div class="workout-meta">
+        <span class="badge badge-time" id="badge-time">⏱ ~75 min</span>
+        <span class="badge badge-exercises" id="badge-count">0 exercises</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="generateWorkout()">
+          <span>↺</span> Regenerate
+        </button>
+        <button class="btn btn-primary" onclick="startWorkout()" id="start-btn" style="display:none">
+          ▶ Start Workout
+        </button>
+      </div>
+    </div>
+
+    <!-- BALANCE VIZ -->
+    <div class="balance-viz" id="balance-viz"></div>
+
+    <div class="exercise-grid" id="exercise-grid">
+      <div class="empty-state">
+        <span class="big">?</span>
+        Click <strong>Regenerate</strong> to generate today's workout
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS (shown during workout) -->
+  <div class="progress-bar-wrap" id="progress-wrap" style="display:none">
+    <span class="progress-text" id="progress-text">0 / 0 done</span>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- SAVE AREA -->
+  <div class="save-area" id="save-area" style="display:none">
+    <button class="btn btn-success" onclick="saveWorkout()">💾 Save Workout</button>
+    <button class="btn btn-secondary" onclick="clearWorkout()">✕ Clear</button>
+  </div>
+
+  <!-- RILEY QUOTE -->
+  <div class="riley-quote">
+    <div class="quote-box" id="riley-quote">
+      "Focus on stimulating and overloading the muscle, not just how much weight you lift. Think about feeling the muscle work during the set."
+      <cite>— Riley Byrne, Body Transformation Program</cite>
+    </div>
+  </div>
+
+  <!-- RILEY PRINCIPLES -->
+  <div class="principles-strip">
+    <div class="principle-card">
+      <div class="principle-num">01</div>
+      <div class="principle-text">
+        <strong>Stimulate</strong>
+        Think about the muscle contracting, not just moving weight from A to B.
+      </div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-num">02</div>
+      <div class="principle-text">
+        <strong>Compound First</strong>
+        Bench, row, chin-up & pullover open every session before isolation work.
+      </div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-num">03</div>
+      <div class="principle-text">
+        <strong>Ribs Down</strong>
+        Think "ribs down" on EVERY rep. Exhale sharply at peak contraction.
+      </div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-num">04</div>
+      <div class="principle-text">
+        <strong>Progressive</strong>
+        Add weight or reps every week. Strength increase = muscle increase.
+      </div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-num">05</div>
+      <div class="principle-text">
+        <strong>Stretch Post-Chest</strong>
+        Chest wall stretch & cobra after every chest session — non-negotiable.
+      </div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-num">06</div>
+      <div class="principle-text">
+        <strong>Consistency</strong>
+        Every day and every meal counts. Transforming your body is a domino effect.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- HISTORY PAGE -->
+<div class="page" id="page-history">
+  <div class="page-content">
+    <div class="page-header">
+      <h2>Workout History</h2>
+      <p>Track your progress over time. Every rep logged is a rep closer.</p>
+    </div>
+    <div class="history-list" id="history-list">
+      <div class="empty-state">
+        <span class="big">📋</span>
+        No workouts saved yet.<br>Complete a workout and save it.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STRETCH PAGE -->
+<div class="page" id="page-stretch">
+  <div class="page-content">
+    <div class="page-header">
+      <h2>Pectus Stretching Protocol</h2>
+      <p>Riley's daily routine to correct kyphotic posture, open the chest wall, and reduce rib flare. Do this every single day.</p>
+    </div>
+
+    <div class="riley-quote" style="padding:0 0 1.5rem">
+      <div class="quote-box">
+        "Correcting the kyphotic spine and tight chest is an extremely important part in improving the pectus condition. Pull shoulders back, push chest out, keep back straight — in daily life, every moment."
+        <cite>— Riley Byrne</cite>
+      </div>
+    </div>
+
+    <div class="stretch-grid">
+      <div class="stretch-card">
+        <div class="stretch-num">01</div>
+        <div class="stretch-name">Chest Wall Stretch</div>
+        <div class="stretch-desc">Stand sideways to a doorframe. Place your arm at 90° on the frame, elbow at shoulder height. Lean gently through the door to open your chest. Feel the stretch across your pec and front shoulder.</div>
+        <div class="stretch-hold">15 sec each side × 5 rounds</div>
+      </div>
+      <div class="stretch-card">
+        <div class="stretch-num">02</div>
+        <div class="stretch-name">Prone Superman Stretch</div>
+        <div class="stretch-desc">Lie face down, arms extended overhead. Lift arms, chest, and legs off the floor simultaneously. Squeeze the glutes and rear delts. Hold at the top, lower slowly. Great for erector spinae and rear shoulder activation.</div>
+        <div class="stretch-hold">3 sec hold × 6 reps</div>
+      </div>
+      <div class="stretch-card">
+        <div class="stretch-num">03</div>
+        <div class="stretch-name">Cobra Stretch</div>
+        <div class="stretch-desc">Lie face down, hands under shoulders. Press up, extending the spine, keeping hips grounded. Hold at the top. Excellent for opening the chest cavity and reducing the appearance of a sunken sternum.</div>
+        <div class="stretch-hold">15 sec hold × 3 reps</div>
+      </div>
+      <div class="stretch-card">
+        <div class="stretch-num">04</div>
+        <div class="stretch-name">Arm Stretch Kneeling</div>
+        <div class="stretch-desc">Kneel on the floor with arms extended out onto a bench or chair at shoulder height. Slowly press your upper body down while keeping your back straight. Targets the chest and shoulder girdle.</div>
+        <div class="stretch-hold">15 sec hold × 3 reps</div>
+      </div>
+      <div class="stretch-card">
+        <div class="stretch-num">05</div>
+        <div class="stretch-name">Reverse Crunch (Rib Flare)</div>
+        <div class="stretch-desc">Lie on your back. Drive knees to chest using abs only, curling the pelvis up. Think "ribs down" on every rep. This is critical for combating rib flare associated with pectus posture.</div>
+        <div class="stretch-hold">12 controlled reps × 3 sets</div>
+      </div>
+      <div class="stretch-card">
+        <div class="stretch-num">06</div>
+        <div class="stretch-name">Shoulder Dislocation Stretch</div>
+        <div class="stretch-desc">Using a band or broomstick with wide grip, slowly rotate arms overhead and behind the back. Keep abs tight and ribs pressed down throughout. Key for correcting rounded shoulders.</div>
+        <div class="stretch-hold">10 reps × 5 sets</div>
+      </div>
+      <div class="stretch-card">
+        <div class="stretch-num">07</div>
+        <div class="stretch-name">Side Plank with Reach Through</div>
+        <div class="stretch-desc">Hold a side plank. Reach top arm under your body (threading the needle), then rotate open reaching toward the ceiling. Works the obliques and helps correct the rotated pelvis posture from pectus.</div>
+        <div class="stretch-hold">30 reach-throughs each arm</div>
+      </div>
+      <div class="stretch-card">
+        <div class="stretch-num">08</div>
+        <div class="stretch-name">Daily Posture Practice</div>
+        <div class="stretch-desc">Every waking hour: place a hand on your upper abdomen, exhale sharply through your mouth while crunching your abs together. Feel the ribs contract and depress. This is the single most important daily habit for pectus improvement.</div>
+        <div class="stretch-hold">As often as possible throughout the day</div>
+      </div>
+    </div>
+
+    <div style="margin-top:2rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem">
+      <h3 style="font-family:'Bebas Neue',cursive;font-size:1.5rem;letter-spacing:0.05em;margin-bottom:1rem;color:var(--accent2)">Rib Flare Protocol</h3>
+      <div style="color:var(--muted);font-size:0.85rem;line-height:1.8">
+        <p><strong style="color:var(--text)">1. Breathwork</strong> — Sharp exhale through the mouth at peak contraction on every exercise. The exhale automatically depresses the ribs.</p>
+        <p><strong style="color:var(--text)">2. "Ribs Down" Cue</strong> — Think this on every gym movement and in daily life. Exhale, crunch abs, feel ribs contract. Start right now in your chair.</p>
+        <p><strong style="color:var(--text)">3. Train Abs</strong> — The core exercises in every workout directly strengthen the muscles that control rib position. Never skip core work.</p>
+        <p><strong style="color:var(--text)">4. Posture Awareness</strong> — Standing, walking, sitting, lying. Shoulders back. Chest out. Back straight. Always.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ Workout saved!</div>
+
+<script>
+// ============================================================
+// EXERCISE DATABASE — from Riley Byrne's Excel + program PDF
+// ============================================================
+const EXERCISES = [
+  // CHEST
+  { name: "Alternating Dumbbell Chest Press", muscle: "Chest", sets: 3, defaultReps: "8-12", compound: true, riley: true },
+  { name: "Bench Press", muscle: "Chest", sets: 5, defaultReps: "10,8,6,8,10", compound: true, riley: true },
+  { name: "Flat Dumbbell Bench Press", muscle: "Chest", sets: 5, defaultReps: "10,8,6,8,10", compound: true, riley: true },
+  { name: "Incline Dumbbell Press", muscle: "Chest", sets: 4, defaultReps: "8-12", compound: true, riley: true },
+  { name: "Incline Barbell Bench Press", muscle: "Chest", sets: 4, defaultReps: "8-12", compound: true, riley: true },
+  { name: "Decline Bench Press", muscle: "Chest", sets: 3, defaultReps: "8-12", compound: true },
+  { name: "Close Grip Bench Press", muscle: "Chest", sets: 3, defaultReps: "8-12", compound: true },
+  { name: "Crush Grip Dumbbell Press", muscle: "Chest", sets: 4, defaultReps: "8-12", compound: false },
+  { name: "Incline Crush Grip Dumbbell Press", muscle: "Chest", sets: 4, defaultReps: "8-12", compound: false, riley: true },
+  { name: "Dumbbell Fly", muscle: "Chest", sets: 3, defaultReps: "10-12", compound: false, riley: true },
+  { name: "Dumbbell Pullover", muscle: "Chest", sets: 3, defaultReps: "10", compound: false, riley: true, note: "Squeeze ribs tight & down" },
+  { name: "Dumbbell Pullovers", muscle: "Chest", sets: 4, defaultReps: "10-12", compound: false, riley: true, note: "Squeeze ribs tight & down" },
+  { name: "High Cable Fly", muscle: "Chest", sets: 3, defaultReps: "10-15", compound: false, riley: true },
+  { name: "Low Cable Fly", muscle: "Chest", sets: 3, defaultReps: "10-15", compound: false },
+  { name: "Mid Cable Fly", muscle: "Chest", sets: 3, defaultReps: "10-15", compound: false },
+  { name: "Pec Dec", muscle: "Chest", sets: 3, defaultReps: "15-20", compound: false },
+  { name: "Single Arm Chest Fly", muscle: "Chest", sets: 3, defaultReps: "10-12", compound: false },
+  { name: "Standing Single Arm Dumbbell Fly", muscle: "Chest", sets: 3, defaultReps: "10-15", compound: false },
+  { name: "Dips", muscle: "Chest", sets: 3, defaultReps: "AMRAP", compound: true, riley: true },
+  { name: "Ring Dip", muscle: "Chest", sets: 4, defaultReps: "AMRAP", compound: true },
+  { name: "Ring Push Ups", muscle: "Chest", sets: 3, defaultReps: "AMRAP", compound: true },
+  { name: "Push Ups", muscle: "Chest", sets: 3, defaultReps: "AMRAP", compound: true },
+  { name: "Plate Pinch Press", muscle: "Chest", sets: 3, defaultReps: "15-20", compound: false, riley: true, note: "Great for inner chest" },
+  { name: "Single Arm Dumbbell Chest Press", muscle: "Chest", sets: 3, defaultReps: "8-12", compound: true },
+  { name: "Cross Body Chest Press Machine", muscle: "Chest", sets: 3, defaultReps: "10-12", compound: false },
+
+  // BACK
+  { name: "Pull Ups", muscle: "Back", sets: 3, defaultReps: "AMRAP", compound: true, riley: true },
+  { name: "Chin Ups", muscle: "Back", sets: 4, defaultReps: "AMRAP", compound: true, riley: true },
+  { name: "Bent Over Barbell Row", muscle: "Back", sets: 4, defaultReps: "8-12", compound: true, riley: true },
+  { name: "Bent Over Dumbbell Row", muscle: "Back", sets: 3, defaultReps: "6-10", compound: true, riley: true },
+  { name: "Single Arm Dumbbell Row", muscle: "Back", sets: 3, defaultReps: "6-10", compound: true, riley: true },
+  { name: "Seated Row", muscle: "Back", sets: 3, defaultReps: "8-12", compound: true, riley: true },
+  { name: "Close Grip Lat Pulldown", muscle: "Back", sets: 3, defaultReps: "8-12", compound: true, riley: true },
+  { name: "Lat Pulldown Wide Grip", muscle: "Back", sets: 3, defaultReps: "8-12", compound: true },
+  { name: "Incline Dumbbell Row", muscle: "Back", sets: 3, defaultReps: "8-12", compound: true },
+  { name: "Rear Delt Dumbbell Fly", muscle: "Back", sets: 3, defaultReps: "12-15", compound: false, riley: true, note: "Slow controlled reps, corrects posture" },
+  { name: "Face Pulls", muscle: "Back", sets: 3, defaultReps: "15-20", compound: false, riley: true, note: "Extremely beneficial for posture" },
+  { name: "Gorilla Row", muscle: "Back", sets: 4, defaultReps: "20-24", compound: true },
+  { name: "T-Bar Rows", muscle: "Back", sets: 4, defaultReps: "8-12", compound: true },
+  { name: "Seal Row", muscle: "Back", sets: 3, defaultReps: "8-12", compound: true },
+  { name: "Ring Row", muscle: "Back", sets: 3, defaultReps: "8-12", compound: true },
+  { name: "Unilateral Seated Row", muscle: "Back", sets: 4, defaultReps: "10", compound: true },
+  { name: "Cable Seated Wide Grip Row", muscle: "Back", sets: 3, defaultReps: "10-12", compound: true },
+
+  // CORE
+  { name: "Ab Rollout", muscle: "Core", sets: 3, defaultReps: "AMRAP", compound: false, riley: true },
+  { name: "Hanging Leg Raises", muscle: "Core", sets: 3, defaultReps: "AMRAP", compound: false, riley: true },
+  { name: "Hanging Knee Raise", muscle: "Core", sets: 3, defaultReps: "15-20", compound: false },
+  { name: "Dead Bug", muscle: "Core", sets: 3, defaultReps: "10-12", compound: false, riley: true },
+  { name: "Dead Bug Single Leg Extension", muscle: "Core", sets: 3, defaultReps: "10", compound: false },
+  { name: "Commando Plank", muscle: "Core", sets: 3, defaultReps: "30 sec", compound: false },
+  { name: "Side Plank Hip Dips", muscle: "Core", sets: 3, defaultReps: "15 each side", compound: false },
+  { name: "Side Plank", muscle: "Core", sets: 3, defaultReps: "30-45 sec", compound: false, riley: true },
+  { name: "Hollow Hold", muscle: "Core", sets: 3, defaultReps: "20-30 sec", compound: false, riley: true },
+  { name: "Pallof Press", muscle: "Core", sets: 3, defaultReps: "10-12", compound: false, riley: true },
+  { name: "Cable Pallof Press", muscle: "Core", sets: 3, defaultReps: "10-12", compound: false },
+  { name: "Russian Twists", muscle: "Core", sets: 3, defaultReps: "20-30", compound: false, riley: true },
+  { name: "Cable Oblique Twists", muscle: "Core", sets: 3, defaultReps: "10-12", compound: false, riley: true },
+  { name: "V Ups", muscle: "Core", sets: 3, defaultReps: "12-15", compound: false, riley: true },
+  { name: "Alternating V Ups", muscle: "Core", sets: 3, defaultReps: "20", compound: false },
+  { name: "Flutter Kicks", muscle: "Core", sets: 3, defaultReps: "30 sec", compound: false, riley: true },
+  { name: "Plank Dumbbell Pull Through", muscle: "Core", sets: 3, defaultReps: "35 sec", compound: false },
+  { name: "Ab Rollout", muscle: "Core", sets: 3, defaultReps: "AMRAP", compound: false, riley: true },
+  { name: "Hanging L Sit", muscle: "Core", sets: 3, defaultReps: "max hold", compound: false },
+  { name: "Reverse Crunch", muscle: "Core", sets: 3, defaultReps: "12", compound: false, riley: true, note: "Think ribs down on every rep" },
+  { name: "Sprinters Crunch", muscle: "Core", sets: 3, defaultReps: "20", compound: false },
+  { name: "Cable Crunch", muscle: "Core", sets: 3, defaultReps: "15-20", compound: false },
+  { name: "Side Plank Powell Raise", muscle: "Core", sets: 3, defaultReps: "10-12", compound: false },
+  { name: "Lying Leg Lifts", muscle: "Core", sets: 3, defaultReps: "12-15", compound: false },
+
+  // SHOULDERS
+  { name: "Dumbbell Lateral Raises", muscle: "Shoulders", sets: 3, defaultReps: "10-15", compound: false, riley: true },
+  { name: "Rear Delt Dumbbell Fly", muscle: "Shoulders", sets: 3, defaultReps: "12-15", compound: false, riley: true },
+  { name: "Seated Dumbbell Shoulder Press", muscle: "Shoulders", sets: 4, defaultReps: "8-12", compound: true },
+  { name: "Military Press", muscle: "Shoulders", sets: 4, defaultReps: "12,9,6", compound: true, riley: true },
+  { name: "Reverse Cable Fly", muscle: "Shoulders", sets: 3, defaultReps: "8-12", compound: false },
+  { name: "Reverse Pec Dec", muscle: "Shoulders", sets: 3, defaultReps: "15-20", compound: false },
+  { name: "Dumbbell Arnold Press", muscle: "Shoulders", sets: 3, defaultReps: "8-12", compound: true },
+  { name: "Face Pulls", muscle: "Shoulders", sets: 3, defaultReps: "15-20", compound: false, riley: true, note: "Key for posture" },
+  { name: "Landmine Press", muscle: "Shoulders", sets: 3, defaultReps: "10-12", compound: true },
+
+  // LEGS
+  { name: "Barbell Back Squats", muscle: "Legs", sets: 4, defaultReps: "8-12", compound: true, riley: true },
+  { name: "Barbell Front Squats", muscle: "Legs", sets: 4, defaultReps: "8-12", compound: true, riley: true },
+  { name: "Dumbbell Front Squats", muscle: "Legs", sets: 3, defaultReps: "15-20", compound: true },
+  { name: "Romanian Barbell Deadlift", muscle: "Legs", sets: 3, defaultReps: "8-12", compound: true },
+  { name: "Deadlift", muscle: "Legs", sets: 4, defaultReps: "6-8", compound: true },
+  { name: "Trap Bar Deadlifts", muscle: "Legs", sets: 3, defaultReps: "8-12", compound: true },
+  { name: "Conventional Deadlift", muscle: "Legs", sets: 4, defaultReps: "8-10", compound: true },
+  { name: "Sumo Deadlift", muscle: "Legs", sets: 4, defaultReps: "10,8,6,4", compound: true },
+  { name: "Bulgarian Lunge", muscle: "Legs", sets: 3, defaultReps: "8-12", compound: true },
+  { name: "Barbell Bulgarian Split Squat", muscle: "Legs", sets: 4, defaultReps: "8-10", compound: true },
+  { name: "Leg Press", muscle: "Legs", sets: 3, defaultReps: "10-15", compound: true },
+  { name: "Lying Leg Curl", muscle: "Legs", sets: 3, defaultReps: "10-12", compound: false },
+  { name: "Single Leg Hip Thrust", muscle: "Legs", sets: 3, defaultReps: "10-12", compound: false },
+  { name: "Single Leg Romanian Deadlift", muscle: "Legs", sets: 3, defaultReps: "10-12", compound: false },
+
+  // BICEPS
+  { name: "Barbell Curl Standing", muscle: "Biceps", sets: 3, defaultReps: "8-12", compound: false, riley: true },
+  { name: "Dumbbell Hammer Curls", muscle: "Biceps", sets: 3, defaultReps: "8-12", compound: false, riley: true },
+  { name: "Preacher Curl", muscle: "Biceps", sets: 3, defaultReps: "8-12", compound: false },
+  { name: "Single Arm Cable Curl", muscle: "Biceps", sets: 3, defaultReps: "10-12", compound: false },
+
+  // TRICEPS
+  { name: "Rope Tricep Pulldown", muscle: "Triceps", sets: 3, defaultReps: "10-15", compound: false },
+  { name: "Straight Bar Tricep Pushdown", muscle: "Triceps", sets: 3, defaultReps: "10-15", compound: false },
+  { name: "Single Arm Tricep Extension", muscle: "Triceps", sets: 3, defaultReps: "10-12", compound: false },
+  { name: "Dumbbell Kickbacks", muscle: "Triceps", sets: 3, defaultReps: "12-15", compound: false, riley: true },
+  { name: "Overhead Tricep Extension", muscle: "Triceps", sets: 3, defaultReps: "8-12", compound: false, riley: true }
+];
+
+// Riley quotes pool
+const RILEY_QUOTES = [
+  '"Focus on stimulating and overloading the muscle, not just how much weight you lift. Think about feeling the muscle work during the set." — Riley Byrne',
+  '"Each week you should progressively increase either the weight, or the reps to ensure you are getting stronger — an increase in strength is relative to an increase in muscle size." — Riley Byrne',
+  '"After every workout you should spend 5–10 minutes cooling down, involving stretching the worked muscles. THIS IS ESPECIALLY IMPORTANT WHEN TRAINING CHEST." — Riley Byrne',
+  '"Transforming your body will have a domino effect. Your body will change. Your mind will change. Your life will change." — Riley Byrne',
+  '"Consistency is key to acquiring a good physique. Every day and every meal counts." — Riley Byrne',
+  '"The dumbbell pullover and chest fly are great exercises for stretching and correcting posture simultaneously." — Riley Byrne',
+  '"Pay attention to your ribs. Think \'ribs down\' on every single movement you perform in the gym and in day to day living." — Riley Byrne',
+  '"You should feel sore and tight in your muscles for 1–3 days after a workout. That means you did it right." — Riley Byrne'
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let currentFocus = 'balanced';
+let currentWorkout = [];
+let workoutActive = false;
+let completedExercises = new Set();
+
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.target.classList.add('active');
+  if (page === 'history') renderHistory();
+}
+
+function setFocus(el, focus) {
+  document.querySelectorAll('.focus-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentFocus = focus;
+  generateWorkout();
+}
+
+// ============================================================
+// WORKOUT GENERATOR
+// ============================================================
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getByMuscle(muscle, n, prioritizeRiley = false) {
+  let pool = EXERCISES.filter(e => e.muscle === muscle);
+  if (prioritizeRiley) {
+    const riley = pool.filter(e => e.riley);
+    const other = pool.filter(e => !e.riley);
+    pool = [...shuffle(riley), ...shuffle(other)];
+  } else {
+    pool = shuffle(pool);
+  }
+  // Deduplicate by name
+  const seen = new Set();
+  const out = [];
+  for (const e of pool) {
+    const key = e.name.toLowerCase();
+    if (!seen.has(key)) { seen.add(key); out.push(e); }
+    if (out.length >= n) break;
+  }
+  return out;
+}
+
+function generateWorkout() {
+  completedExercises.clear();
+  workoutActive = false;
+
+  let blocks = [];
+
+  const focusMap = {
+    balanced: { Chest: 3, Back: 3, Core: 2, Shoulders: 1, Biceps: 1 },
+    chest: { Chest: 5, Back: 2, Core: 2, Shoulders: 1 },
+    back: { Back: 5, Chest: 2, Core: 2, Shoulders: 1 },
+    push: { Chest: 4, Shoulders: 2, Triceps: 2, Core: 2 },
+    pull: { Back: 4, Biceps: 2, Shoulders: 2, Core: 2 },
+    full: { Chest: 2, Back: 2, Legs: 2, Core: 2, Shoulders: 1 }
+  };
+
+  const counts = focusMap[currentFocus] || focusMap.balanced;
+
+  // Build exercise list maintaining Riley's principle: compounds first
+  let allExercises = [];
+  for (const [muscle, count] of Object.entries(counts)) {
+    const exes = getByMuscle(muscle, count, true);
+    allExercises.push(...exes);
+  }
+
+  // Sort: compound first, then isolation
+  const compounds = allExercises.filter(e => e.compound);
+  const isolation = allExercises.filter(e => !e.compound);
+  const sorted = [...shuffle(compounds), ...shuffle(isolation)];
+
+  // Group into supersets (pairs) — Riley loves supersets
+  const paired = [];
+  let i = 0;
+  while (i < sorted.length) {
+    if (i + 1 < sorted.length) {
+      // Don't pair two compounds together on main lifts
+      paired.push([sorted[i], sorted[i + 1]]);
+      i += 2;
+    } else {
+      paired.push([sorted[i]]);
+      i++;
+    }
+  }
+
+  currentWorkout = paired;
+
+  // Render
+  renderWorkout();
+
+  // Show start btn
+  document.getElementById('start-btn').style.display = 'flex';
+  document.getElementById('save-area').style.display = 'none';
+  document.getElementById('progress-wrap').style.display = 'none';
+
+  // Update quote
+  const q = RILEY_QUOTES[Math.floor(Math.random() * RILEY_QUOTES.length)];
+  document.getElementById('riley-quote').innerHTML = `"${q.split(' — ')[0]}" <cite>— ${q.split(' — ')[1] || 'Riley Byrne'}</cite>`;
+
+  updateBalanceViz(sorted);
+}
+
+function renderWorkout() {
+  const grid = document.getElementById('exercise-grid');
+  const allExs = currentWorkout.flat();
+  const total = allExs.length;
+  const totalSets = allExs.reduce((s, e) => s + (e.sets || 3), 0);
+  const estMins = Math.round(totalSets * 2.5 + 5); // ~2.5 min per set
+
+  document.getElementById('badge-time').textContent = `⏱ ~${estMins} min`;
+  document.getElementById('badge-count').textContent = `${total} exercises`;
+
+  let html = '';
+
+  currentWorkout.forEach((block, bi) => {
+    const isSuper = block.length > 1;
+    const blockLabel = isSuper ? `SUPERSET · ${block[0].sets || 3} sets` : `${block[0].sets || 3} SETS`;
+
+    html += `<div class="superset-block">`;
+    html += `<div class="superset-header"><div class="superset-dot"></div>${blockLabel}</div>`;
+
+    block.forEach((ex, ei) => {
+      const exId = `ex-${bi}-${ei}`;
+      const muscleClass = `muscle-${ex.muscle.toLowerCase()}`;
+      const note = ex.note ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${ex.note}</div>` : '';
+      const rileyStar = ex.riley ? '<span title="Riley Byrne staple exercise" style="font-size:0.7rem;margin-left:4px">⭐</span>' : '';
+
+      html += `<div class="exercise-card" id="${exId}" data-bi="${bi}" data-ei="${ei}">
+        <div class="ex-left">
+          <span class="muscle-pill ${muscleClass}">${ex.muscle}</span>
+          <div class="ex-info">
+            <div class="ex-name">${ex.name}${rileyStar}</div>
+            <div class="ex-sets-reps">${ex.sets || 3} sets × ${ex.defaultReps}</div>
+            ${note}
+          </div>
+        </div>
+        <div class="ex-log">
+          <div class="log-field">
+            <div class="log-label">Weight</div>
+            <input class="log-input" type="number" placeholder="kg" id="weight-${exId}" min="0" step="0.5">
+          </div>
+          <div class="log-field">
+            <div class="log-label">Reps</div>
+            <input class="log-input" type="text" placeholder="reps" id="reps-${exId}" value="">
+          </div>
+          <div class="log-field">
+            <div class="log-label">RPE</div>
+            <input class="log-input rpe-input" type="number" placeholder="1-10" id="rpe-${exId}" min="1" max="10">
+          </div>
+          <button class="log-complete-btn" id="done-${exId}" onclick="toggleDone('${exId}')" title="Mark complete">✓</button>
+        </div>
+      </div>`;
+
+      if (ei < block.length - 1) {
+        html += `<div class="rest-divider">↕ no rest between exercises</div>`;
+      }
+    });
+
+    const rest = block[0].compound ? '90s' : '60s';
+    if (bi < currentWorkout.length - 1) {
+      html += `<div class="rest-divider">⏸ rest ${rest}</div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  grid.innerHTML = html;
+}
+
+function toggleDone(exId) {
+  const card = document.getElementById(exId);
+  const btn = document.getElementById('done-' + exId);
+  if (completedExercises.has(exId)) {
+    completedExercises.delete(exId);
+    card.classList.remove('completed');
+    btn.classList.remove('done');
+  } else {
+    completedExercises.add(exId);
+    card.classList.add('completed');
+    btn.classList.add('done');
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = currentWorkout.flat().length;
+  const done = completedExercises.size;
+  document.getElementById('progress-text').textContent = `${done} / ${total} done`;
+  document.getElementById('progress-fill').style.width = `${(done / total) * 100}%`;
+
+  if (done === total && total > 0) {
+    showToast('🎉 Workout complete! Save it below.');
+    document.getElementById('save-area').style.display = 'flex';
+  }
+}
+
+function startWorkout() {
+  workoutActive = true;
+  document.getElementById('progress-wrap').style.display = 'flex';
+  document.getElementById('start-btn').style.display = 'none';
+  document.getElementById('save-area').style.display = 'flex';
+  showToast('Workout started! Log your weights & reps.');
+}
+
+function clearWorkout() {
+  completedExercises.clear();
+  workoutActive = false;
+  generateWorkout();
+}
+
+function updateBalanceViz(exercises) {
+  const groups = { Chest: 0, Back: 0, Core: 0, Legs: 0, Shoulders: 0, Biceps: 0, Triceps: 0 };
+  exercises.forEach(e => { if (groups[e.muscle] !== undefined) groups[e.muscle]++; });
+  const max = Math.max(...Object.values(groups), 1);
+  const colors = {
+    Chest: 'var(--chest)', Back: 'var(--back)', Core: 'var(--core)',
+    Legs: 'var(--legs)', Shoulders: 'var(--shoulders)', Biceps: 'var(--biceps)', Triceps: 'var(--triceps)'
+  };
+
+  const html = Object.entries(groups)
+    .filter(([, v]) => v > 0)
+    .map(([k, v]) => `
+      <div class="balance-item">
+        <div class="balance-label" style="color:${colors[k]}">${k}</div>
+        <div class="balance-track">
+          <div class="balance-fill" style="width:${(v/max)*100}%;background:${colors[k]}"></div>
+        </div>
+        <div class="balance-count">${v}</div>
+      </div>
+    `).join('');
+
+  document.getElementById('balance-viz').innerHTML = html;
+}
+
+// ============================================================
+// SAVE / HISTORY
+// ============================================================
+function saveWorkout() {
+  if (currentWorkout.length === 0) return;
+
+  const exercises = currentWorkout.flat().map((ex, i) => {
+    const bi = Math.floor(i / 2); const ei = i % 2;
+    // Find exId
+    let found = null;
+    for (let bi2 = 0; bi2 < currentWorkout.length; bi2++) {
+      for (let ei2 = 0; ei2 < currentWorkout[bi2].length; ei2++) {
+        if (currentWorkout[bi2][ei2] === ex) {
+          found = `ex-${bi2}-${ei2}`;
+          break;
+        }
+      }
+      if (found) break;
+    }
+    const exId = found || `ex-${i}-0`;
+    return {
+      name: ex.name,
+      muscle: ex.muscle,
+      sets: ex.sets || 3,
+      defaultReps: ex.defaultReps,
+      weight: document.getElementById('weight-' + exId)?.value || '',
+      reps: document.getElementById('reps-' + exId)?.value || '',
+      rpe: document.getElementById('rpe-' + exId)?.value || '',
+      completed: completedExercises.has(exId)
+    };
+  });
+
+  const workout = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+    focus: currentFocus,
+    exercises
+  };
+
+  const history = getHistory();
+  history.unshift(workout);
+  localStorage.setItem('pectusForgeHistory', JSON.stringify(history));
+
+  showToast('💾 Workout saved!');
+  clearWorkout();
+}
+
+function getHistory() {
+  try {
+    return JSON.parse(localStorage.getItem('pectusForgeHistory') || '[]');
+  } catch { return []; }
+}
+
+function renderHistory() {
+  const history = getHistory();
+  const list = document.getElementById('history-list');
+
+  if (history.length === 0) {
+    list.innerHTML = `<div class="empty-state"><span class="big">📋</span>No workouts saved yet.<br>Complete a workout and save it.</div>`;
+    return;
+  }
+
+  const muscleColors = { Chest: 'var(--chest)', Back: 'var(--back)', Core: 'var(--core)', Legs: 'var(--legs)', Shoulders: 'var(--shoulders)', Biceps: 'var(--biceps)', Triceps: 'var(--triceps)' };
+
+  list.innerHTML = history.map((w, wi) => {
+    const groups = {};
+    w.exercises.forEach(e => { if (!groups[e.muscle]) groups[e.muscle] = 0; groups[e.muscle]++; });
+    const badges = Object.entries(groups).map(([m, n]) =>
+      `<span class="badge" style="border-color:${muscleColors[m]||'var(--muted)'};color:${muscleColors[m]||'var(--muted)'}">${m} ×${n}</span>`
+    ).join('');
+
+    const rows = w.exercises.map(e => {
+      const hasData = e.weight || e.reps;
+      return `<div class="history-ex-row">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${muscleColors[e.muscle]||'var(--muted)'};display:inline-block;flex-shrink:0"></span>
+          <span class="history-ex-name">${e.name}</span>
+        </div>
+        <div class="history-ex-data">
+          ${hasData ? `${e.weight ? e.weight+'kg' : '—'} · ${e.reps || '—'} reps${e.rpe ? ' · RPE '+e.rpe : ''}` : '<em>no data</em>'}
+          ${e.completed ? ' ✓' : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="history-card">
+      <div class="history-header" onclick="toggleHistory(${wi})">
+        <div>
+          <div class="history-date">${w.date}</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;font-family:'Space Mono',monospace;letter-spacing:0.05em">${w.focus.toUpperCase()} · ${w.exercises.length} exercises</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="history-badges">${badges}</div>
+          <button class="del-btn" onclick="deleteWorkout(${w.id}, event)">🗑</button>
+        </div>
+      </div>
+      <div class="history-body" id="hist-${wi}">${rows}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHistory(wi) {
+  const body = document.getElementById('hist-' + wi);
+  body.classList.toggle('open');
+}
+
+function deleteWorkout(id, e) {
+  e.stopPropagation();
+  if (!confirm('Delete this workout?')) return;
+  const history = getHistory().filter(w => w.id !== id);
+  localStorage.setItem('pectusForgeHistory', JSON.stringify(history));
+  renderHistory();
+  showToast('Workout deleted');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+generateWorkout();
+</script>
+</body>
+</html>
